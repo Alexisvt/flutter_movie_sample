@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../blocs/blocs.dart';
+import '../models/models.dart';
 
 class MovieDetail extends StatefulWidget {
   final String posterUrl;
@@ -22,6 +24,21 @@ class MovieDetail extends StatefulWidget {
 }
 
 class _MovieDetailState extends State<MovieDetail> {
+  MovieDetailBloc bloc;
+
+  @override
+  void didChangeDependencies() {
+    bloc = MovieDetailBlocProvider.of(context);
+    bloc.fetchTrailersById(widget.movieId);
+    super.didChangeDependencies();
+  }
+
+  @override
+  void dispose() {
+    bloc.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -104,10 +121,104 @@ class _MovieDetailState extends State<MovieDetail> {
                   ),
                 ),
                 Text(widget.description),
+                Container(margin: EdgeInsets.only(top: 8.0, bottom: 8.0)),
+                Text(
+                  "Trailer",
+                  style: TextStyle(
+                    fontSize: 25.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.only(
+                    top: 8.0,
+                    bottom: 8.0,
+                  ),
+                ),
+                buildStreamBuilder()
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  StreamBuilder<Future<TrailerModel>> buildStreamBuilder() {
+    return StreamBuilder<Future<TrailerModel>>(
+      stream: bloc.movieTrailers,
+      builder:
+          (BuildContext context, AsyncSnapshot<Future<TrailerModel>> snapshot) {
+        if (snapshot.hasData) {
+          // TODO: do something with the data
+          return buildFutureBuilder(snapshot);
+        } else {
+          // TODO: the data is not ready, show a loading indicator
+          return Center(child: CircularProgressIndicator());
+        }
+      },
+    );
+  }
+
+  FutureBuilder<TrailerModel> buildFutureBuilder(
+      AsyncSnapshot<Future<TrailerModel>> snapshot) {
+    return FutureBuilder<TrailerModel>(
+      future: snapshot.data,
+      builder:
+          (BuildContext context, AsyncSnapshot<TrailerModel> itemSnapShot) {
+        if (itemSnapShot.hasData) {
+          if (itemSnapShot.data.results.length > 0)
+            return trailerLayout(itemSnapShot.data);
+          else
+            return noTrailer(itemSnapShot.data);
+        } else {
+          return Center(child: CircularProgressIndicator());
+        }
+      },
+    );
+  }
+
+  Widget noTrailer(TrailerModel data) {
+    return Center(
+      child: Container(
+        child: Text("No trailer available"),
+      ),
+    );
+  }
+
+  Widget trailerLayout(TrailerModel data) {
+    if (data.results.length > 1) {
+      return Row(
+        children: <Widget>[
+          trailerItem(data, 0),
+          trailerItem(data, 1),
+        ],
+      );
+    } else {
+      return Row(
+        children: <Widget>[
+          trailerItem(data, 0),
+        ],
+      );
+    }
+  }
+
+  trailerItem(TrailerModel data, int index) {
+    return Expanded(
+      child: Column(
+        children: <Widget>[
+          Container(
+            margin: EdgeInsets.all(5.0),
+            height: 100.0,
+            color: Colors.grey,
+            child: Center(child: Icon(Icons.play_circle_filled)),
+          ),
+          Text(
+            data.results[index].name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

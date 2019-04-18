@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../blocs/./movies_bloc.dart';
+import '../blocs/blocs.dart';
 import '../models/models.dart';
 import './movie_detail.dart';
 
@@ -25,13 +25,10 @@ class _MovieListState extends State<MovieList> {
         stream: bloc.allMovies,
         builder: (BuildContext context, AsyncSnapshot<ItemModel> snapshot) {
           if (snapshot.hasData) {
-            // TODO: do something with the data
             return buildList(snapshot);
           } else if (snapshot.hasError) {
-            // TODO: do something with the error
             return Text(snapshot.error.toString());
           }
-          // TODO: the data is not ready, show a loading indicator
           return Center(child: CircularProgressIndicator());
         },
       ),
@@ -62,13 +59,15 @@ class _MovieListState extends State<MovieList> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (BuildContext context) {
-        return MovieDetail(
-          title: data.results[index].title,
-          posterUrl: data.results[index].backdrop_path,
-          description: data.results[index].overview,
-          releaseDate: data.results[index].release_date,
-          voteAverage: data.results[index].vote_average.toString(),
-          movieId: data.results[index].id,
+        return MovieDetailBlocProvider(
+          child: MovieDetail(
+            title: data.results[index].title,
+            posterUrl: data.results[index].backdrop_path,
+            description: data.results[index].overview,
+            releaseDate: data.results[index].release_date,
+            voteAverage: data.results[index].vote_average.toString(),
+            movieId: data.results[index].id,
+          ),
         );
       }),
     );
